@@ -1,0 +1,503 @@
+#!/usr/bin/env pinpoint
+
+[text-align=center]
+[duration=35.000000]
+-- [duration=24.734694]
+Booting Faster
+
+<span font="35px">
+Stewart Smith
+OPAL Architect, IBM
+stewart@linux.vnet.ibm.com
+@stewartsmith
+</span>
+# - Hi, I'm Stewart
+# - Currently at IBM.
+# - OPAL Architect, that is, OpenPower Firmware
+# - OPAL - OpenPower Abstraction Layer
+
+-- [duration=10.398975]
+Premature optimization is
+the root of all evil
+# Some wise person.
+
+-- [duration=6.034959]
+Booting is a feature
+# People kind of expect this
+
+-- [C64.jpg] [duration=20.116747]
+
+# This was really quick
+# processor starts executing instructions directly from ROM, nothing to set up
+
+-- [apple2zork.ogv] [duration=28.440409]
+
+# An Apple ][ was slower: (generally) reading things from disk
+# Basically, as soon as booting involves IO you lose.
+# important difference here between firmware boot time and "OS" boot time
+
+-- [w95.mp4] [duration=21.455740]
+
+# more to do, loading off a hard disk!
+# this is an OS. Important to think about firmware boot time too.
+# User cares about *total* boot time, not just one component.
+
+-- [win311.gif] [duration=29.962439]
+
+# Emulator is faster.
+# But many seconds in firmware before we get to the OS.
+
+-- [duration=22.817484]
+login:
+# Let's work backwards. Before a computer is ready for useful work,
+# there's a few big things that need to be set up. When you're at
+# the login prompt, we're already well into userspace, but before
+# that we have...
+
+-- [duration=40.284988]
+Firmware
+Bootloader
+OS Kernel
+Userspace
+# your OS kernel, which has been loaded by at least one form of bootloader.
+# Before that bootloader comes system firmware, that turns a pile of electronic
+# components into something you recognise as a computer.
+
+-- [fedoraboot.ogv] [duration=44.407372]
+
+# the OS boot to userspace is already pretty quick. Even in a VM on my laptop!
+# The Linux boot process has been intensely optimized. We have dependencies,
+# parallelism, the whole works. It's all cross platform too. There's nothing
+# POWER specific here. We can probably shave off millions of instructions in
+# early kernel boot... but that's probably not worth it on real hardware
+
+-- [ubuntu-ppc64boot.ogv] [duration=29.705116]
+
+# and it's quick when you have Ubuntu on POWER9 too. Lots of things starting all in parallel there too.
+# The OS boot is a "solved" problem. Well, I'd *like* it to be faster, but that's 
+
+-- [habanero-boot.ogv] [duration=48.722500]
+
+# Since I work on OpenPOWER systems though, we can look at the *other* parts
+# of what it takes to get to a useful computer.
+# this means firmware.
+# Our machines historically weren't quick in firmware
+# You can probably already work out that a lot more time is spent in firmware
+# than is booting an OS.
+# This is a POWER8 system.
+
+-- [ozrom2-ipl.flv] [duration=45.648529]
+
+# and things didn't get better on POWER9. Although we do (with code in git at least)
+# no longer have a 13-20 second black hole before we get anything on the console.
+
+-- [FW810-boot.flv] [duration=92.673447]
+
+# But we've come a long way
+# on our first POWER8 systems it took well more than 3 minutes to get to the point of
+# booting an OS, and the only progress you had was a blank screen or this "Progress code"
+# on the physical operator panel on the front of the machine, or via the Web UI.
+#
+# So, let's look backwards from the OS running. The immediate thing before the OS
+# is the bootloader, Petitboot.
+
+-- [duration=66.097488]
+Before the OS: Petitboot
+# On our systems we have a Bootloader in firmware called Petitboot.
+# It's actually a userpsace application running on Linux.
+# We have Linux in firmware to boot the Linux that's your OS.
+# No rewriting drivers!
+
+-- [fw810-opal-boot.ogv] [duration=63.158901]
+
+# since it's linux, there may be improvements that can be made.
+# This, our first version, you can see taking ~40 seconds to boot
+# the kernel and present the menu with all options available (disk and network)
+#
+# A big time of that was loading all the kernel drivers and probing
+# for disks attached to the RAID card.
+
+-- [duration=13.077121]
+Step 1: Use tricks of the distros
+
+-- [fw860-opal-boot.ogv] [duration=82.852142]
+
+# Our first efforts were going "Well, can we make the drivers modules, let
+# userspace come up in parallel with scanning for disks"?
+# This meant that we got to the menu in 7 seconds rather than 35 seconds.
+# You still had to wait an additional ~30 seconds for your disks to show up though!
+
+-- [duration=5.155182]
+Step 2: "Faster" hardware?
+# What about different RAID cards?
+
+-- [habanero-opal.ogv] [duration=48.107468]
+
+# Indeed, a more commodity RAID card *HALVED* linux/petitboot boot time, even without "everything as modules"
+
+-- [hab4-2019-opal.ogv] [duration=32.846184]
+
+# and when we combine those two things, and *quieten* the kernel booting
+# we are now down to <8 seconds for the kernel to boot, get userspace up,
+# and find what OS we can boot.
+
+-- [duration=58.316151]
+quiet kernel = many seconds of boot saved
+# Not all IPMI Serial Over LAN consoles are created equal.
+# I couldn't believe it at first.
+
+-- [duration=72.786369]
+Linux + Petitboot:
+~40 seconds to ~9 seconds
+# Cutting over 30 seconds of boot time is fairly neat!
+# Not only that, we get a UI up quicker, so it *feels* quicker.
+# This is where we are today with upstream code (and shipping on P9 machines),
+# for this part of boot.
+#
+# But where does all that Linux time go?
+
+-- [duration=6.300179]
+[    4.556928] Run /init as init process
+# Somewhere between 4.5
+
+-- [duration=22.066399]
+[    4.899386] Run /init as init process
+# and 4.9 seconds spent getting to userspace.
+
+-- [duration=130.429932]
+2.5 seconds for unxz initramfs!
+# 
+# But we have earlier phases of boot!
+# Our idea (and we have prototypes) is to move decompressing the initramfs from something the kernel does, into something we do earlier in the boot. Our prototype shows us saving those 2.5 seconds.
+# Hats off to our intern who got that done way in advance of the rest of the firmware build process being ready for it.
+# anyway, with all of that, we're down to:
+
+-- [text-align=left] [duration=76.517548]
+Total boot time:
+* 1m50s POWER8 (originally 3+minutes)
+* 2m25s POWER9
+# we shaved over a minute off boot time on POWER8!
+#
+# That minute was that ~30 seconds in linux+petitboot, plus a bunch of seconds
+# in another firmware layer, skiboot.
+#
+# We've only talked about the Linux/Petitboot environment so far...
+# and with only 9 seconds there, obvious the boot phases are where it hurts.
+
+-- [text-align=left] [duration=33.705166]
+SBE
+Hostboot
+Skiboot
+Linux + Petitboot
+# This is our boot order
+# So how long does Skiboot take and why?
+
+-- [hab4-2019-skiboot.ogv] [duration=13.264328]
+
+# Well, on POWER8 OpenPOWER systems it's about 20 seconds.
+# It used to be significantly longer, and for different reasons than why it now takes so long.
+
+-- [duration=29.666018]
+PCIe
+# We're going to take a couple of seconds here because that's what the spec says.
+# Hello, are you a PCI card? <waits a bit>, Okay then.
+# We have many PHBs, and we originally just serially went through them....
+
+-- [duration=14.917148]
+You have many CPU threads: use them
+# Went from tens of seconds to the minimal amount of time we need to wait.
+
+-- [duration=11.848390]
+PCIe = ~3 seconds
+# Hardware work-arounds is part of that.
+
+-- [duration=21.834560]
+20 - 3 = 17
+# Where do those extra seconds go?
+# Well, by carefully looking at some logs and ensuring we have the correct printfs...
+
+-- [duration=60.744049]
+BOOTKERNEL
+# This is a 16MB xz compressed kernel with xz compresesd initramfs.
+# We load it from flash and jump to it. This is the petitboot environment.
+# So... how long does that take?
+# It's ~1second on one of our enterprise machines because it has different hardware
+# that can do fast DMA to/from the host. But on OpenPOWER commodity machines...
+#
+
+-- [ibm-pc.jpg] [duration=4.762887]
+
+# the ISA bus of old PCs
+
+-- [pc-mobo.jpg] [duration=5.645920]
+
+# yes, *those* slots. They're kind of still around in modern computers.
+
+-- [lpc-docs.png] [duration=10.675514]
+
+# Using 4 pins and clocked 4x, but many ideas are the same. ISA bus on steroids.
+
+-- [isa-pc-hdd.jpg] [duration=22.955992]
+
+# now I haven't done a side-by-side benchmark... but reading from flash is not
+# fast.
+
+-- [fw-mem-read-cycles.png] [duration=28.542217]
+
+# It's a 33mhz bus, and can be pretty chatty for reading data.
+# As you can probably tell for how many cycles it takes to read a single byte.
+# 33mhz isn't a lot of mhz any more.
+
+-- [fw-mem-size-red.png] [duration=18.721165]
+
+# How great would having that overhead be for 128 bytes? What an improvement!
+
+-- [lpc-fw-read.png] [duration=25.065878]
+
+# Because for small reads, we can get 1.75MB/sec!
+# and for some reason the math is missing from the read page of the doc,
+
+-- [duration=17.083662]
+16MB / 1.75MB/sec = 9.14 seconds
+# Which is a little quicker than what we currently do, but within the ballpark.
+# So what about that 128 byte mode?
+
+-- [lpc-fw-write.png] [duration=91.031113]
+
+# It'd be great if our flash would support that...
+# Our current system design is that the SPI flash is sitting off the service processor
+# (an ast2500) and we marshal reads/writes/ through a mapping of LPC space to BMC memory
+# and a daemon on the BMC.
+# The BMC doesn't support the 128 byte mode.
+#
+# A hardware design change could make our systems boot many seconds quicker just
+# in this phase of boot.
+
+-- [duration=74.800377]
+PCI?
+# The BMC is also connected to the host via PCI. So we could try and see if we can
+# use it.
+# Downsides? We need PCI up, and we need to do a bunch of work on the BMC and host
+# firmware to make it go.... and doing that here at this stage of boot wouldn't
+# solve a big amount of boot time.
+
+-- [text-align=left] [duration=10.551730]
+SBE
+Hostboot
+Skiboot = ~20 seconds
+Linux + Petitboot = ~9 seconds
+=====
+Total = 2m25sec
+
+-- [duration=2.475014]
+SBE + Hostboot = ~1m50sec
+
+-- [ozrom2-hostboot.ogv] [duration=14.038983]
+
+# So we spend about 1m7seconds in hostboot
+# This is the bit of firmware that (among other things) brings up memory
+
+-- [duration=63.670113]
+What about <b>BIG</b> systems?
+# Hostboot takes longer there.
+# On "multi-drawer" systems, 4 drawers start with 4 Hostboot instances,
+# and then stitch them together. So by the time we get to later firmware,
+# it's one computer.
+# But for those systems, early boot process is pretty weird.
+
+-- [text-align=left] [duration=52.991737]
+Pre-DRAM: ~33seconds
+DRAM: ~10seconds for 512GB
+Post-DRAM: ~25seconds
+# On this machine, which doesn't have *that* much memory.
+# Getting DRAM going is proportional to how much you have.
+
+-- [text-align=left] [font=monospace] [duration=9.156938]
+ID=00            part 0x00000000..0x00002000 (actual=0x00002000) [----------]
+ID=01            HBEL 0x00008000..0x0002c000 (actual=0x00024000) [E-----F-C-]
+ID=02           GUARD 0x0002c000..0x00031000 (actual=0x00005000) [E--P--F-C-]
+ID=03           NVRAM 0x00031000..0x000c1000 (actual=0x00090000) [---P--F---]
+ID=04         SECBOOT 0x000c1000..0x000e5000 (actual=0x00024000) [E--P------]
+ID=05           DJVPD 0x000e5000..0x0012d000 (actual=0x00048000) [E--P--F-C-]
+ID=06            MVPD 0x0012d000..0x001bd000 (actual=0x00090000) [E--P--F-C-]
+ID=07            CVPD 0x001bd000..0x00205000 (actual=0x00048000) [E--P--F-C-]
+ID=08             HBB 0x00205000..0x00305000 (actual=0x00100000) [EL--R-----]
+ID=09             HBD 0x00305000..0x00425000 (actual=0x00120000) [EL--------]
+ID=10             HBI 0x00425000..0x013e5000 (actual=0x00fc0000) [EL--R-----]
+ID=11             SBE 0x013e5000..0x014a1000 (actual=0x000bc000) [ELI-R-----]
+ID=12           HCODE 0x014a1000..0x015c1000 (actual=0x00120000) [EL--R-----]
+ID=13            HBRT 0x015c1000..0x01bc1000 (actual=0x00600000) [EL--R-----]
+ID=14         PAYLOAD 0x01bc1000..0x01cc1000 (actual=0x00064608) [-L--R-----]
+ID=15      BOOTKERNEL 0x01cc1000..0x02bc1000 (actual=0x00f00000) [-L--R-----]
+ID=16             OCC 0x02bc1000..0x02ce1000 (actual=0x00120000) [EL--R-----]
+ID=17         FIRDATA 0x02ce1000..0x02ce4000 (actual=0x00003000) [E-----F-C-]
+ID=18            CAPP 0x02ce4000..0x02d08000 (actual=0x00024000) [EL--R-----]
+ID=19         BMC_INV 0x02d08000..0x02d11000 (actual=0x00009000) [------F---]
+ID=20            HBBL 0x02d11000..0x02d18000 (actual=0x00007000) [EL--R-----]
+ID=21        ATTR_TMP 0x02d18000..0x02d20000 (actual=0x00008000) [------F---]
+ID=22       ATTR_PERM 0x02d20000..0x02d28000 (actual=0x00008000) [E-----F-C-]
+ID=23         VERSION 0x02d28000..0x02d2a000 (actual=0x00002000) [-L--R-----]
+ID=24     IMA_CATALOG 0x02d2a000..0x02d6a000 (actual=0x00040000) [EL--R-----]
+ID=25         RINGOVD 0x02d6a000..0x02d8a000 (actual=0x00020000) [----------]
+ID=26         WOFDATA 0x02d8a000..0x0308a000 (actual=0x00300000) [EL--R-----]
+ID=27     HB_VOLATILE 0x0308a000..0x0308f000 (actual=0x00005000) [E-----F-CV]
+ID=28            MEMD 0x0308f000..0x0309d000 (actual=0x0000e000) [EL--R-----]
+ID=29            SBKT 0x0309d000..0x030a1000 (actual=0x00004000) [EL--R-----]
+ID=30            HDAT 0x030a1000..0x030a9000 (actual=0x00008000) [EL--R-----]
+ID=31          UVISOR 0x030a9000..0x031a9000 (actual=0x00100000) [-L--R-----]
+ID=32          OCMBFW 0x031a9000..0x031f4000 (actual=0x0004b000) [EL--R-----]
+ID=33     BACKUP_PART 0x03ff7000..0x03fff000 (actual=0x00000000) [-----B----]
+# These are the partitions on flash
+
+-- [text-align=left] [font=monospace] [duration=11.370097]
+ID=00            part 0x00000000..0x00002000 (actual=0x00002000) [----------]
+<b>ID=01            HBEL 0x00008000..0x0002c000 (actual=0x00024000) [E-----F-C-]</b>
+<b>ID=02           GUARD 0x0002c000..0x00031000 (actual=0x00005000) [E--P--F-C-]</b>
+ID=03           NVRAM 0x00031000..0x000c1000 (actual=0x00090000) [---P--F---]
+ID=04         SECBOOT 0x000c1000..0x000e5000 (actual=0x00024000) [E--P------]
+<b>ID=05           DJVPD 0x000e5000..0x0012d000 (actual=0x00048000) [E--P--F-C-]</b>
+<b>ID=06            MVPD 0x0012d000..0x001bd000 (actual=0x00090000) [E--P--F-C-]</b>
+<b>ID=07            CVPD 0x001bd000..0x00205000 (actual=0x00048000) [E--P--F-C-]</b>
+<b>ID=08             HBB 0x00205000..0x00305000 (actual=0x00100000) [EL--R-----]</b>
+<b>ID=09             HBD 0x00305000..0x00425000 (actual=0x00120000) [EL--------]</b>
+<b>ID=10             HBI 0x00425000..0x013e5000 (actual=0x00fc0000) [EL--R-----]</b>
+<b>ID=11             SBE 0x013e5000..0x014a1000 (actual=0x000bc000) [ELI-R-----]</b>
+<b>ID=12           HCODE 0x014a1000..0x015c1000 (actual=0x00120000) [EL--R-----]</b>
+<b>ID=13            HBRT 0x015c1000..0x01bc1000 (actual=0x00600000) [EL--R-----]</b>
+<b>ID=14         PAYLOAD 0x01bc1000..0x01cc1000 (actual=0x00064608) [-L--R-----]</b>
+ID=15      BOOTKERNEL 0x01cc1000..0x02bc1000 (actual=0x00f00000) [-L--R-----]
+<b>ID=16             OCC 0x02bc1000..0x02ce1000 (actual=0x00120000) [EL--R-----]</b>
+<b>ID=17         FIRDATA 0x02ce1000..0x02ce4000 (actual=0x00003000) [E-----F-C-]</b>
+ID=18            CAPP 0x02ce4000..0x02d08000 (actual=0x00024000) [EL--R-----]
+ID=19         BMC_INV 0x02d08000..0x02d11000 (actual=0x00009000) [------F---]
+<b>ID=20            HBBL 0x02d11000..0x02d18000 (actual=0x00007000) [EL--R-----]</b>
+ID=21        ATTR_TMP 0x02d18000..0x02d20000 (actual=0x00008000) [------F---]
+ID=22       ATTR_PERM 0x02d20000..0x02d28000 (actual=0x00008000) [E-----F-C-]
+ID=23         VERSION 0x02d28000..0x02d2a000 (actual=0x00002000) [-L--R-----]
+ID=24     IMA_CATALOG 0x02d2a000..0x02d6a000 (actual=0x00040000) [EL--R-----]
+ID=25         RINGOVD 0x02d6a000..0x02d8a000 (actual=0x00020000) [----------]
+<b>ID=26         WOFDATA 0x02d8a000..0x0308a000 (actual=0x00300000) [EL--R-----]</b>
+<b>ID=27     HB_VOLATILE 0x0308a000..0x0308f000 (actual=0x00005000) [E-----F-CV]</b>
+<b>ID=28            MEMD 0x0308f000..0x0309d000 (actual=0x0000e000) [EL--R-----]</b>
+ID=29            SBKT 0x0309d000..0x030a1000 (actual=0x00004000) [EL--R-----]
+ID=30            HDAT 0x030a1000..0x030a9000 (actual=0x00008000) [EL--R-----]
+ID=31          UVISOR 0x030a9000..0x031a9000 (actual=0x00100000) [-L--R-----]
+ID=32          OCMBFW 0x031a9000..0x031f4000 (actual=0x0004b000) [EL--R-----]
+ID=33     BACKUP_PART 0x03ff7000..0x03fff000 (actual=0x00000000) [-----B----]
+# and these are ones that may be looked at during a "normal" boot by hostboot.
+# Hrm.. that's a lot. 32MB to be exact!
+
+-- [duration=20.895754]
+32MB / 1.7MB/sec = 18seconds!
+# *IF* we were reading everything at full speed for LPC.
+# But we don't and it's more complex than that
+
+-- [duration=22.910618]
+Hostboot does on-demand paging...
+# Especially before DRAM is up, we're running in L3 cache. The hostboot team
+# has described that they get fairly tight on memory here, so they swap a lot.
+
+-- [duration=14.268024]
+Thrashing before there's RAM!
+# How may we peek into what's going on?
+# Well, we could go and make hostboot log it somewhere, but where? In memory
+# would be great, but then we change what we're observing. To the console?
+# slooowww.
+
+-- [font=monospace] [duration=13.281296]
+blktrace(1)
+# what I really want is blktrace.
+
+-- [duration=34.477646]
+We read firmware from Flash
+via a daemon on the BMC
+# and we could adapt that to log what the host is asking for.
+# You could also do this with extra hardware snooping the LPC bus.
+# So we modify the daemon doing that, as well as changing the "read" size
+# from 1MB to a 4k page....
+
+-- [blktrace-boot.png] [duration=27.455063]
+
+# and this is what it looks like
+# you can see some big sequential loads there.
+# the last one is BOOTKERNEL, the petitboot environment.
+# but check out all the scattered dots early on.
+
+-- [text-align=left] [font=monospace 40px] [duration=15.319564]
+   ~50MB of total IO
+ - ~35MB of flash read
+ =====================
+   ~15MB extra IO!
+
+-- [duration=15.643488]
+15MB / 1.75MB/sec = 8.5 seconds!
+# 8.5 seconds of hostboot time is spent thrashing.
+
+-- [font=monospace 72px] [duration=58.887081]
+gcc -Os
+# This is hard because hostboot has a custom linker that has bugs.
+# Nobody remembers *why* there's a custom linker, and the code base
+# isn't too contributor friendly.
+# But there's motivation to fix, as we may get whole seconds of boot time.
+
+-- [duration=49.107597]
+SBE = "20 second black hole"
+# Some of our initialisation had to move into the SBE... and it has
+# not had any optimization done yet for boot time.
+# This is ... slower than P8
+
+-- [duration=23.273413]
+How long do other computers take?
+# It turns out, we're in the ballpark for servers, often quicker.
+# But it can *seem* longer.
+
+-- [font=monospace 50px] [duration=16.857874]
+<b>VGA</b>
+# We currently do this by having the BMC control the VGA device
+# until Linux comes up, which is in the last 8 seconds of boot.
+
+-- [talos.png] [duration=31.554399]
+Boot progress on discreet graphics card
+# is a bit harder.
+# Why?
+# Otherwise you have a blank screen on your workstation for nearly TWO MINUTES on boot.
+# On a desktop PC, PCIe has to have been probed to get a discrete GPU up, but the time to first light is relatively small (although not as small as I think)
+# Getting PCI earlier in boot is hard.
+
+-- [duration=3.973814]
+Cheat?
+
+-- [fast-reboot.webm] [shading-opacity=0.500000] [duration=31.974796]
+Fast Reboot
+# Maybe we don't need to re-init all hardware?
+# If we don't then we can win big in *reboot* time. Not boot time though.
+# So, useful if you're doing an OS update or testing kernels.
+# Not useful if cold booting.
+
+-- [text-align=left] [duration=67.168839]
+Summary
+# even with setbacks on POWER9 boot time in some components, we improved
+# over where we were at the start.
+# We have optimized the simple components (Linux+userspace) heaps.
+# We need to delve into hairier bits, that have fewer contributors and a higher barrier to entry
+# But we have a good idea of what we can attack!
+# We're faster than some competing machines.
+--
+Wait... What about the BMC?
+# The BMC needs to be running before the host can boot.
+# It takes... surprisingly long to boot.
+-- [duration=2.854569]
+github.com/open-power
+# Your firmware *and* your firmware's test suite *aren't* on github? Weird.
+
+--
+Thank you.
+-- [text-align=left]
+C64 boot: https://www.c64-wiki.com/wiki/First_Steps#Switching_the_C64_on
+Apple ][ boot: https://archive.org/details/A2Video_Zork_I_r5
+Windows 95 boot: somewhere on giphy
+DOS/Win311 boot: https://imgur.com/gallery/3AQcDVR
+IBM PC: https://www.flickr.com/photos/medienzeitmaschine/5150471651/
+IBM PC mobo: https://www.flickr.com/photos/94466642@N00/1190205961/in/photostream/
+ISA HDD and adapter: https://www.flickr.com/photos/94466642@N00/1190207499/in/photostream/
+LPC docs: https://www.intel.com/content/dam/www/program/design/us/en/documents/low-pincount-interface-specification.pdf
