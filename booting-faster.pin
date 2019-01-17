@@ -35,7 +35,6 @@ Booting is a feature
 # An Apple ][ was slower: (generally) reading things from disk
 # Basically, as soon as booting involves IO you lose.
 # important difference here between firmware boot time and "OS" boot time
-
 -- [w95.mp4] [duration=21.455740]
 
 # more to do, loading off a hard disk!
@@ -62,7 +61,17 @@ Userspace
 # your OS kernel, which has been loaded by at least one form of bootloader.
 # Before that bootloader comes system firmware, that turns a pile of electronic
 # components into something you recognise as a computer.
-
+-- [duration=10]
+BMC
+Firmware
+Bootloader
+OS Kernel
+Userspace
+# for servers (including all OpenPOWER machines) there's a service processor that
+# first starts. You plug the power cable in, the service processor boots, then
+# you can boot your server.
+# It's (yet another) embedded ARM Linux device.
+# Not going to cover here. Making that boot faster is another talk
 -- [fedoraboot.ogv] [duration=44.407372]
 
 # the OS boot to userspace is already pretty quick. Even in a VM on my laptop!
@@ -180,6 +189,13 @@ Total boot time:
 #
 # That minute was that ~30 seconds in linux+petitboot, plus a bunch of seconds
 # in another firmware layer, skiboot.
+--
+Why does POWER9 boot slower?
+# FEATURES!
+# e.g. secure boot, we have to load more and verify
+# and it pins more pages in memory while cache-contained
+#
+# anyway...
 #
 # We've only talked about the Linux/Petitboot environment so far...
 # and with only 9 seconds there, obvious the boot phases are where it hurts.
@@ -351,34 +367,34 @@ ID=33     BACKUP_PART 0x03ff7000..0x03fff000 (actual=0x00000000) [-----B----]
 
 -- [text-align=left] [font=monospace] [duration=11.370097]
 ID=00            part 0x00000000..0x00002000 (actual=0x00002000) [----------]
-<b>ID=01            HBEL 0x00008000..0x0002c000 (actual=0x00024000) [E-----F-C-]</b>
-<b>ID=02           GUARD 0x0002c000..0x00031000 (actual=0x00005000) [E--P--F-C-]</b>
+<span color="red">ID=01            HBEL 0x00008000..0x0002c000 (actual=0x00024000) [E-----F-C-]
+ID=02           GUARD 0x0002c000..0x00031000 (actual=0x00005000) [E--P--F-C-]</span>
 ID=03           NVRAM 0x00031000..0x000c1000 (actual=0x00090000) [---P--F---]
 ID=04         SECBOOT 0x000c1000..0x000e5000 (actual=0x00024000) [E--P------]
-<b>ID=05           DJVPD 0x000e5000..0x0012d000 (actual=0x00048000) [E--P--F-C-]</b>
-<b>ID=06            MVPD 0x0012d000..0x001bd000 (actual=0x00090000) [E--P--F-C-]</b>
-<b>ID=07            CVPD 0x001bd000..0x00205000 (actual=0x00048000) [E--P--F-C-]</b>
-<b>ID=08             HBB 0x00205000..0x00305000 (actual=0x00100000) [EL--R-----]</b>
-<b>ID=09             HBD 0x00305000..0x00425000 (actual=0x00120000) [EL--------]</b>
-<b>ID=10             HBI 0x00425000..0x013e5000 (actual=0x00fc0000) [EL--R-----]</b>
-<b>ID=11             SBE 0x013e5000..0x014a1000 (actual=0x000bc000) [ELI-R-----]</b>
-<b>ID=12           HCODE 0x014a1000..0x015c1000 (actual=0x00120000) [EL--R-----]</b>
-<b>ID=13            HBRT 0x015c1000..0x01bc1000 (actual=0x00600000) [EL--R-----]</b>
-<b>ID=14         PAYLOAD 0x01bc1000..0x01cc1000 (actual=0x00064608) [-L--R-----]</b>
+<span color="red">ID=05           DJVPD 0x000e5000..0x0012d000 (actual=0x00048000) [E--P--F-C-]
+ID=06            MVPD 0x0012d000..0x001bd000 (actual=0x00090000) [E--P--F-C-]
+ID=07            CVPD 0x001bd000..0x00205000 (actual=0x00048000) [E--P--F-C-]
+ID=08             HBB 0x00205000..0x00305000 (actual=0x00100000) [EL--R-----]
+ID=09             HBD 0x00305000..0x00425000 (actual=0x00120000) [EL--------]
+ID=10             HBI 0x00425000..0x013e5000 (actual=0x00fc0000) [EL--R-----]
+ID=11             SBE 0x013e5000..0x014a1000 (actual=0x000bc000) [ELI-R-----]
+ID=12           HCODE 0x014a1000..0x015c1000 (actual=0x00120000) [EL--R-----]
+ID=13            HBRT 0x015c1000..0x01bc1000 (actual=0x00600000) [EL--R-----]
+ID=14         PAYLOAD 0x01bc1000..0x01cc1000 (actual=0x00064608) [-L--R-----]</span>
 ID=15      BOOTKERNEL 0x01cc1000..0x02bc1000 (actual=0x00f00000) [-L--R-----]
-<b>ID=16             OCC 0x02bc1000..0x02ce1000 (actual=0x00120000) [EL--R-----]</b>
-<b>ID=17         FIRDATA 0x02ce1000..0x02ce4000 (actual=0x00003000) [E-----F-C-]</b>
+<span color="red">ID=16             OCC 0x02bc1000..0x02ce1000 (actual=0x00120000) [EL--R-----]
+ID=17         FIRDATA 0x02ce1000..0x02ce4000 (actual=0x00003000) [E-----F-C-]</span>
 ID=18            CAPP 0x02ce4000..0x02d08000 (actual=0x00024000) [EL--R-----]
 ID=19         BMC_INV 0x02d08000..0x02d11000 (actual=0x00009000) [------F---]
-<b>ID=20            HBBL 0x02d11000..0x02d18000 (actual=0x00007000) [EL--R-----]</b>
+<span color="red">ID=20            HBBL 0x02d11000..0x02d18000 (actual=0x00007000) [EL--R-----]</span>
 ID=21        ATTR_TMP 0x02d18000..0x02d20000 (actual=0x00008000) [------F---]
 ID=22       ATTR_PERM 0x02d20000..0x02d28000 (actual=0x00008000) [E-----F-C-]
 ID=23         VERSION 0x02d28000..0x02d2a000 (actual=0x00002000) [-L--R-----]
 ID=24     IMA_CATALOG 0x02d2a000..0x02d6a000 (actual=0x00040000) [EL--R-----]
 ID=25         RINGOVD 0x02d6a000..0x02d8a000 (actual=0x00020000) [----------]
-<b>ID=26         WOFDATA 0x02d8a000..0x0308a000 (actual=0x00300000) [EL--R-----]</b>
-<b>ID=27     HB_VOLATILE 0x0308a000..0x0308f000 (actual=0x00005000) [E-----F-CV]</b>
-<b>ID=28            MEMD 0x0308f000..0x0309d000 (actual=0x0000e000) [EL--R-----]</b>
+<span color="red">ID=26         WOFDATA 0x02d8a000..0x0308a000 (actual=0x00300000) [EL--R-----]
+ID=27     HB_VOLATILE 0x0308a000..0x0308f000 (actual=0x00005000) [E-----F-CV]
+ID=28            MEMD 0x0308f000..0x0309d000 (actual=0x0000e000) [EL--R-----]</span>
 ID=29            SBKT 0x0309d000..0x030a1000 (actual=0x00004000) [EL--R-----]
 ID=30            HDAT 0x030a1000..0x030a9000 (actual=0x00008000) [EL--R-----]
 ID=31          UVISOR 0x030a9000..0x031a9000 (actual=0x00100000) [-L--R-----]
@@ -451,21 +467,24 @@ How long do other computers take?
 # It turns out, we're in the ballpark for servers, often quicker.
 # But it can *seem* longer.
 
--- [font=monospace 50px] [duration=16.857874]
+-- [font=monospace 50px] [duration=16.857874] [vga-tree.jpg]
 <b>VGA</b>
 # We currently do this by having the BMC control the VGA device
 # until Linux comes up, which is in the last 8 seconds of boot.
 
--- [talos.png] [duration=31.554399]
+-- [talos-desktop.jpg] [duration=31.554399]
 Boot progress on discreet graphics card
 # is a bit harder.
 # Why?
 # Otherwise you have a blank screen on your workstation for nearly TWO MINUTES on boot.
 # On a desktop PC, PCIe has to have been probed to get a discrete GPU up, but the time to first light is relatively small (although not as small as I think)
 # Getting PCI earlier in boot is hard.
-
--- [duration=3.973814]
-Cheat?
+-- [gpus.jpg]
+# these things aren't as easy to drive as a framebuffer, and we don't have VGA BIOS.
+# We have to fit *fonts* somewhere
+# Could we drive them while cache contained? errr... eep
+-- [duration=3.973814] [cheat.jpg]
+#Cheat?
 
 -- [fast-reboot.webm] [shading-opacity=0.500000] [duration=31.974796]
 Fast Reboot
@@ -473,19 +492,16 @@ Fast Reboot
 # If we don't then we can win big in *reboot* time. Not boot time though.
 # So, useful if you're doing an OS update or testing kernels.
 # Not useful if cold booting.
+# We ship this, seems to be somewhat equivalent to some other firmware stacks.
 
 -- [text-align=left] [duration=67.168839]
 Summary
-# even with setbacks on POWER9 boot time in some components, we improved
-# over where we were at the start.
-# We have optimized the simple components (Linux+userspace) heaps.
-# We need to delve into hairier bits, that have fewer contributors and a higher barrier to entry
-# But we have a good idea of what we can attack!
-# We're faster than some competing machines.
---
-Wait... What about the BMC?
-# The BMC needs to be running before the host can boot.
-# It takes... surprisingly long to boot.
+* GA1 P9 better GA1 P8 
+* We have optimized the simple components
+* We need to delve into hairier bits
+* We can get good measurements, act on data.
+* We have a good idea of what we can attack!
+* We're faster than some competing machines.
 -- [duration=2.854569]
 github.com/open-power
 # Your firmware *and* your firmware's test suite *aren't* on github? Weird.
@@ -501,3 +517,7 @@ IBM PC: https://www.flickr.com/photos/medienzeitmaschine/5150471651/
 IBM PC mobo: https://www.flickr.com/photos/94466642@N00/1190205961/in/photostream/
 ISA HDD and adapter: https://www.flickr.com/photos/94466642@N00/1190207499/in/photostream/
 LPC docs: https://www.intel.com/content/dam/www/program/design/us/en/documents/low-pincount-interface-specification.pdf
+VGA Tree: Stilgherrian, https://www.flickr.com/photos/skipgoshannon/2412907219/
+GPU cards: Hiroyuki Takeda, https://www.flickr.com/photos/skipgoshannon/2412907219/
+Cheat: Shannon Palmer, https://www.flickr.com/photos/skipgoshannon/2412907219/
+Talos Workstation photo: Dan Horák <sharkcz@fedoraproject.org>
