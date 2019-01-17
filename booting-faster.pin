@@ -436,9 +436,9 @@ via a daemon on the BMC
 
 # and this is what it looks like
 # you can see some big sequential loads there.
+-- [blktrace-boot-label.png]
 # the last one is BOOTKERNEL, the petitboot environment.
 # but check out all the scattered dots early on.
-
 -- [text-align=left] [font=monospace 40px] [duration=15.319564]
    ~50MB of total IO
  - ~35MB of flash read
