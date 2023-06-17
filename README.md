@@ -3,12 +3,12 @@ Booting Faster
 
 https://linux.conf.au/schedule/presentation/105/
 
-Youtube recording: N/A
+Youtube recording: https://www.youtube.com/watch?v=fTLsS_QZ8us
 
-Presented by Stewart Smith
-at linux.conf.au 2019, Christchurch, New Zealand.
-Room C1 | Wed 23 Jan | 11:35 a.m.–12:20 p.m.
-Target audience: Developer 
+- Presented by Stewart Smith
+- at linux.conf.au 2019, Christchurch, New Zealand.
+- Room C1 | Wed 23 Jan | 11:35 a.m.–12:20 p.m.
+- Target audience: Developer 
 
 
 Abstract
@@ -40,9 +40,9 @@ faster than a bunch of our other servers" will be subtly ssshhed.
 
 Presented by
 ------------
-Stewart Smith
-https://www.flamingspork.com/
-@stewartsmith
+- Stewart Smith
+- https://www.flamingspork.com/
+- @stewartsmith https://twitter.com/stewartsmith
 
 Stewart currently works for IBM in the Linux Technology Center on OPAL, the
 OpenPOWER Abstraction Layer – open source firmware for POWER systems. He
